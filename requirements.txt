@@ -1,0 +1,1 @@
+Lista bibliotek do zainstalowania przez serwer (w tym przypadku tylko streamlit).
