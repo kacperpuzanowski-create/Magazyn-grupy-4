@@ -1,53 +1,47 @@
-
-Python
-
 import streamlit as st
 
-# Konfiguracja strony
-st.set_page_config(page_title="Magazyn Mikołaja", page_icon="🎅")
+# 1. Konfiguracja strony (musi być jako pierwsza komenda Streamlit)
+st.set_page_config(page_title="Magazyn Grupy 4", page_icon="📦")
 
-# --- NAGŁÓWEK Z MIKOŁAJEM ---
-# Tworzymy dwie kolumny: lewa na tytuł, prawa na obrazek
+# 2. Nagłówek z Mikołajem w prawym górnym rogu
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.title("📦 Prosta Aplikacja Magazynowa")
+    st.title("📦 Magazyn Grupy 4")
 
 with col2:
-    # Link do obrazka Mikołaja (możesz wymienić na własny URL lub plik)
-    url_mikolaja = "https://cdn.pixabay.com/photo/2017/11/20/15/51/santa-claus-2965934_1280.png"
-    st.image(url_mikolaja, width=150)
+    # Używamy stabilnego linku do grafiki Mikołaja
+    st.image("https://cdn.pixabay.com/photo/2017/11/20/15/51/santa-claus-2965934_1280.png", width=120)
 
-# --- LOGIKA MAGAZYNU ---
+# 3. Inicjalizacja listy produktów (pamięć podręczna)
 if 'produkty' not in st.session_state:
     st.session_state.produkty = []
 
-# SEKCJA: DODAWANIE
+# 4. Formularz dodawania produktów
 st.subheader("Dodaj nowy produkt")
-nowy_produkt = st.text_input("Nazwa produktu:", placeholder="Np. Prezent dla Grzegorza")
+with st.form(key="dodaj_produkt", clear_on_submit=True):
+    nowy_produkt = st.text_input("Nazwa produktu:")
+    submit_button = st.form_submit_button(label="Dodaj do bazy")
 
-if st.button("Dodaj do magazynu"):
-    if nowy_produkt:
-        if nowy_produkt not in st.session_state.produkty:
-            st.session_state.produkty.append(nowy_produkt)
-            st.success(f"Dodano: {nowy_produkt}")
-            st.rerun()
-        else:
-            st.warning("Ten produkt już jest na liście.")
+if submit_button and nowy_produkt:
+    if nowy_produkt not in st.session_state.produkty:
+        st.session_state.produkty.append(nowy_produkt)
+        st.success(f"Dodano: {nowy_produkt}")
+        st.rerun()
     else:
-        st.error("Pole nazwy nie może być puste!")
+        st.warning("Ten produkt już jest na liście.")
 
 st.divider()
 
-# SEKCJA: LISTA I USUWANIE
+# 5. Wyświetlanie listy i usuwanie
 st.subheader("Aktualny stan magazynu")
 
 if not st.session_state.produkty:
-    st.info("Magazyn jest pusty.")
+    st.info("Brak produktów w magazynie.")
 else:
     for index, produkt in enumerate(st.session_state.produkty):
         c1, c2 = st.columns([4, 1])
-        c1.write(f"🔹 {produkt}")
-        if c2.button("Usuń", key=f"del_{index}"):
+        c1.write(f"🔹 **{produkt}**")
+        if c2.button("Usuń", key=f"btn_{index}"):
             st.session_state.produkty.pop(index)
             st.rerun()
