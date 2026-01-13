@@ -49,7 +49,6 @@ if prod_data:
         })
     st.table(tabela_danych)
 
----
 
 # --- DODAWANIE I USUWANIE (W KOLUMNACH) ---
 col_prod, col_kat = st.columns(2)
