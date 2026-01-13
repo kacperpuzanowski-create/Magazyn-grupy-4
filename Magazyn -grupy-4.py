@@ -32,8 +32,6 @@ if kat_data.data:
             supabase.table("Kategorie").delete().eq("id", kat["id"]).execute()
             st.rerun()
 
----
-
 # --- SEKCJA PRODUKTY ---
 st.header("🍎 Produkty")
 
