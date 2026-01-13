@@ -1,3 +1,55 @@
+import streamlit as st
+from supabase import create_client, Client
+
+# Konfiguracja połączenia
+url: str = st.secrets["SUPABASE_URL"]
+key: str = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(url, key)
+
+st.set_page_config(page_title="Magazyn Pro", layout="wide")
+st.title("📦 System Zarządzania Magazynem")
+
+# --- POBIERANIE DANYCH ---
+def get_data():
+    produkty = supabase.table("Produkty").select("*, Kategorie(nazwa)").execute()
+    kategorie = supabase.table("Kategorie").select("*").execute()
+    return produkty.data, kategorie.data
+
+prod_data, kat_data = get_data()
+
+# --- SEKCJA OSTRZEŻEŃ (DASHBOARD) ---
+st.header("⚠️ Alerty i Stan")
+niski_stan = 5  # Próg ostrzegawczy
+
+# Filtrowanie produktów z niskim stanem
+produkty_brakujace = [p for p in prod_data if p['liczba'] <= niski_stan]
+
+if produkty_brakujace:
+    for p in produkty_brakujace:
+        if p['liczba'] == 0:
+            st.error(f"🚨 **BRAK NA STANIE:** {p['nazwa']} (0 szt.)")
+        else:
+            st.warning(f"📉 **NISKI STAN:** {p['nazwa']} - pozostało tylko {p['liczba']} szt.")
+else:
+    st.success("✅ Wszystkie stany magazynowe są w normie.")
+
+st.divider()
+
+# --- WIDOK TABELI STANU ---
+st.subheader("📊 Aktualny stan magazynu")
+if prod_data:
+    # Przygotowanie danych do tabeli
+    tabela_danych = []
+    for p in prod_data:
+        tabela_danych.append({
+            "Produkt": p['nazwa'],
+            "Ilość": p['liczba'],
+            "Cena (PLN)": f"{p['cena']:.2f}",
+            "Kategoria": p.get('Kategorie', {}).get('nazwa', 'Brak')
+        })
+    st.table(tabela_danych)
+
+---
 
 # --- DODAWANIE I USUWANIE (W KOLUMNACH) ---
 col_prod, col_kat = st.columns(2)
