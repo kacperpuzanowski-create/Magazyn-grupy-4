@@ -1,47 +1,70 @@
 import streamlit as st
+from supabase import create_client, Client
 
-# 1. Konfiguracja strony (musi być jako pierwsza komenda Streamlit)
-st.set_page_config(page_title="Magazyn Grupy 4", page_icon="📦")
+# Konfiguracja połączenia z Supabase
+# Dane pobierane są z "Secrets" w Streamlit dla bezpieczeństwa
+url: str = st.secrets["SUPABASE_URL"]
+key: str = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(url, key)
 
-# 2. Nagłówek z Mikołajem w prawym górnym rogu
-col1, col2 = st.columns([3, 1])
+st.title("📦 Zarządzanie Magazynem")
 
-with col1:
-    st.title("📦 Magazyn Grupy 4")
+# --- SEKCJA KATEGORIE ---
+st.header("📂 Kategorie")
 
-with col2:
-    # Używamy stabilnego linku do grafiki Mikołaja
-    st.image("https://cdn.pixabay.com/photo/2017/11/20/15/51/santa-claus-2965934_1280.png", width=120)
+with st.form("dodaj_kategorie"):
+    nazwa_kat = st.text_input("Nazwa kategorii")
+    opis_kat = st.text_area("Opis")
+    submit_kat = st.form_submit_button("Dodaj kategorię")
+    
+    if submit_kat and nazwa_kat:
+        data = {"nazwa": nazwa_kat, "opis": opis_kat}
+        supabase.table("Kategorie").insert(data).execute()
+        st.success(f"Dodano kategorię: {nazwa_kat}")
 
-# 3. Inicjalizacja listy produktów (pamięć podręczna)
-if 'produkty' not in st.session_state:
-    st.session_state.produkty = []
+# Wyświetlanie i usuwanie kategorii
+kat_data = supabase.table("Kategorie").select("*").execute()
+if kat_data.data:
+    for kat in kat_data.data:
+        col1, col2 = st.columns([4, 1])
+        col1.write(f"**{kat['nazwa']}** (ID: {kat['id']})")
+        if col2.button("Usuń", key=f"del_kat_{kat['id']}"):
+            supabase.table("Kategorie").delete().eq("id", kat["id"]).execute()
+            st.rerun()
 
-# 4. Formularz dodawania produktów
-st.subheader("Dodaj nowy produkt")
-with st.form(key="dodaj_produkt", clear_on_submit=True):
-    nowy_produkt = st.text_input("Nazwa produktu:")
-    submit_button = st.form_submit_button(label="Dodaj do bazy")
+---
 
-if submit_button and nowy_produkt:
-    if nowy_produkt not in st.session_state.produkty:
-        st.session_state.produkty.append(nowy_produkt)
-        st.success(f"Dodano: {nowy_produkt}")
-        st.rerun()
-    else:
-        st.warning("Ten produkt już jest na liście.")
+# --- SEKCJA PRODUKTY ---
+st.header("🍎 Produkty")
 
-st.divider()
+# Pobranie kategorii do selectboxa
+kategorie_list = {k['nazwa']: k['id'] for k in kat_data.data}
 
-# 5. Wyświetlanie listy i usuwanie
-st.subheader("Aktualny stan magazynu")
+with st.form("dodaj_produkt"):
+    nazwa_prod = st.text_input("Nazwa produktu")
+    liczba = st.number_input("Liczba", min_value=0, step=1)
+    cena = st.number_input("Cena", min_value=0.0, format="%.2f")
+    kategoria_nazwa = st.selectbox("Wybierz kategorię", options=list(kategorie_list.keys()))
+    submit_prod = st.form_submit_button("Dodaj produkt")
 
-if not st.session_state.produkty:
-    st.info("Brak produktów w magazynie.")
-else:
-    for index, produkt in enumerate(st.session_state.produkty):
-        c1, c2 = st.columns([4, 1])
-        c1.write(f"🔹 **{produkt}**")
-        if c2.button("Usuń", key=f"btn_{index}"):
-            st.session_state.produkty.pop(index)
+    if submit_prod and nazwa_prod:
+        prod_data = {
+            "nazwa": nazwa_prod,
+            "liczba": liczba,
+            "cena": cena,
+            "kategoria_id": kategorie_list[kategoria_nazwa]
+        }
+        supabase.table("Produkty").insert(prod_data).execute()
+        st.success(f"Dodano produkt: {nazwa_prod}")
+
+# Wyświetlanie i usuwanie produktów
+prod_res = supabase.table("Produkty").select("*, Kategorie(nazwa)").execute()
+if prod_res.data:
+    for p in prod_res.data:
+        col1, col2 = st.columns([4, 1])
+        # Kategorie(nazwa) to join dzięki relacji Foreign Key
+        kat_label = p.get('Kategorie', {}).get('nazwa', 'Brak')
+        col1.write(f"{p['nazwa']} | Ilość: {p['liczba']} | Cena: {p['cena']} PLN | Kat: {kat_label}")
+        if col2.button("Usuń", key=f"del_prod_{p['id']}"):
+            supabase.table("Produkty").delete().eq("id", p["id"]).execute()
             st.rerun()
