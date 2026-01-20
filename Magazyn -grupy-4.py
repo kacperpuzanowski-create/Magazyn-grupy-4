@@ -87,20 +87,3 @@ with col_prod:
                     "cena": n_cena, "kategoria_id": kategorie_dict[n_kat]
                 }).execute()
                 st.rerun()
-
-    # Usuwanie produktów
-    for p in prod_data:
-        c1, c2 = st.columns([3, 1])
-        c1.write(f"{p['nazwa']} ({p['liczba']} szt.)")
-        if c2.button("Usuń", key=f"del_p_{p['id']}"):
-            supabase.table("Produkty").delete().eq("id", p["id"]).execute()
-            st.rerun()
-if produkty_brakujace:
-    for p in produkty_brakujace:
-        # Pobieramy cenę do zmiennej dla czytelności
-        cena_format = f"{p['cena']:.2f} PLN"
-        
-        if p['liczba'] == 0:
-            st.error(f"🚨 **BRAK NA STANIE:** {p['nazwa']} (Cena: {cena_format})")
-        else:
-            st.warning(f"📉 **NISKI STAN:** {p['nazwa']} - zostało {p['liczba']} szt. (Cena: {cena_format})")
