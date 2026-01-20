@@ -95,3 +95,12 @@ with col_prod:
         if c2.button("Usuń", key=f"del_p_{p['id']}"):
             supabase.table("Produkty").delete().eq("id", p["id"]).execute()
             st.rerun()
+if produkty_brakujace:
+    for p in produkty_brakujace:
+        # Pobieramy cenę do zmiennej dla czytelności
+        cena_format = f"{p['cena']:.2f} PLN"
+        
+        if p['liczba'] == 0:
+            st.error(f"🚨 **BRAK NA STANIE:** {p['nazwa']} (Cena: {cena_format})")
+        else:
+            st.warning(f"📉 **NISKI STAN:** {p['nazwa']} - zostało {p['liczba']} szt. (Cena: {cena_format})")
